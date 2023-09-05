@@ -1,12 +1,12 @@
 // Uncomment these following global attributes to silence most warnings of "low" interest:
-/*
+
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 #![allow(unreachable_code)]
 #![allow(unused_mut)]
 #![allow(unused_unsafe)]
 #![allow(unused_variables)]
-*/
+
 extern crate nalgebra_glm as glm;
 use std::{ mem, ptr, os::raw::c_void };
 use std::thread;
@@ -56,18 +56,35 @@ fn offset<T>(n: u32) -> *const c_void {
 unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>) -> u32 {
     // Implement me!
 
-    // Also, feel free to delete comments :)
-
     // This should:
     // * Generate a VAO and bind it
+    let mut arrayID = 0;
+    gl::GenVertexArrays(1, &mut arrayID);
+    gl::BindVertexArray(arrayID);
+    
     // * Generate a VBO and bind it
+    let mut bufferID = 0;
+    gl::GenBuffers(1, &mut bufferID);
+    gl::BindBuffer(gl::ARRAY_BUFFER, bufferID);
+    
     // * Fill it with data
-    // * Configure a VAP for the data and enable it
-    // * Generate a IBO and bind it
-    // * Fill it with data
-    // * Return the ID of the VAO
+    gl::BufferData(gl::ARRAY_BUFFER, mem::size_of_val(&vertices) as isize, vertices.as_ptr().cast(), gl::STATIC_DRAW);
 
-    0
+    // * Configure a VAP for the data and enable it
+    // Careful about stride parameter for next assignment
+    gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 0, 0 as *const _);
+    gl::EnableVertexAttribArray(0);
+
+    // * Generate a IBO and bind it
+    let mut indexBufferID = 0;
+    gl::GenBuffers(1, &mut indexBufferID);
+    gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, indexBufferID);
+
+    // * Fill it with data
+    gl::BufferData(gl::ELEMENT_ARRAY_BUFFER, mem::size_of_val(&indices) as isize, indices.as_ptr().cast(), gl::STATIC_DRAW);
+    // * Return the ID of the VAO*/
+
+    arrayID
 }
 
 
@@ -132,8 +149,15 @@ fn main() {
 
         // == // Set up your VAO around here
 
-        let my_vao = unsafe { 1337 };
-
+        // let my_vao = unsafe { 1337 };
+        let vertices: Vec<f32> = vec![-0.6, -0.6, 0.0, 
+                                0.6, -0.6, 0.0, 
+                                0.0, 0.6, 0.0];
+        let indices: Vec<u32> = vec![0, 1, 2];
+        let mut vao: u32 = 0;
+        unsafe {
+            vao = create_vao(&vertices, &indices);
+        };
 
         // == // Set up your shaders here
 
@@ -144,14 +168,13 @@ fn main() {
         // This snippet is not enough to do the exercise, and will need to be modified (outside
         // of just using the correct path), but it only needs to be called once
 
-        /*
         let simple_shader = unsafe {
             shader::ShaderBuilder::new()
-                .attach_file("./path/to/simple/shader.file")
+                .attach_file("./shaders/simple.vert")
+                .attach_file("./shaders/simple.frag")
                 .link()
+                .activate()
         };
-        */
-
 
         // Used to demonstrate keyboard handling for exercise 2.
         let mut _arbitrary_number = 0.0; // feel free to remove
@@ -217,9 +240,8 @@ fn main() {
 
 
                 // == // Issue the necessary gl:: commands to draw your scene here
-
-
-
+                gl::BindVertexArray(vao);
+                gl::DrawElements(gl::TRIANGLES, indices.len() as i32, gl::UNSIGNED_INT, 0 as *const c_void);
             }
 
             // Display the new color buffer on the display
