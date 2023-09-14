@@ -1,11 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\report",
-    "\\report\\images",
-    "\\resources",
-    "\\src"
+    "\\report"
   ],
-  "SelectedNode": "\\shaders",
+  "SelectedNode": "\\report\\report.md",
   "PreviewInSolutionExplorer": false
 }

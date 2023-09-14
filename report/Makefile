@@ -22,7 +22,7 @@ has-%:
 	) >&2
 
 %.pdf: %.md Makefile | has-pandoc
-	pandoc -i $< ${PANDOC_ARGS} -o $@ #--pdf-engine=pdflatex
+	pandoc -i $< ${PANDOC_ARGS} -o $@ --pdf-engine=pdflatex
 
 %.tex: %.md Makefile | has-pandoc
 	pandoc -i $< ${PANDOC_ARGS} -o $@ --standalone

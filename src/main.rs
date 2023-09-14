@@ -68,7 +68,7 @@ unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>) -> u32 {
     gl::BindBuffer(gl::ARRAY_BUFFER, bufferID);
     
     // * Fill it with data
-    gl::BufferData(gl::ARRAY_BUFFER, mem::size_of_val(&vertices) as isize, vertices.as_ptr().cast(), gl::STATIC_DRAW);
+    gl::BufferData(gl::ARRAY_BUFFER, byte_size_of_array(vertices), pointer_to_array(vertices), gl::STATIC_DRAW);
 
     // * Configure a VAP for the data and enable it
     // Careful about stride parameter for next assignment
@@ -81,7 +81,7 @@ unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>) -> u32 {
     gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, indexBufferID);
 
     // * Fill it with data
-    gl::BufferData(gl::ELEMENT_ARRAY_BUFFER, mem::size_of_val(&indices) as isize, indices.as_ptr().cast(), gl::STATIC_DRAW);
+    gl::BufferData(gl::ELEMENT_ARRAY_BUFFER, byte_size_of_array(indices), pointer_to_array(indices), gl::STATIC_DRAW);
     // * Return the ID of the VAO*/
 
     arrayID
@@ -150,11 +150,9 @@ fn main() {
         // == // Set up your VAO around here
 
         // let my_vao = unsafe { 1337 };
-        let vertices: Vec<f32> = vec![-0.6, -0.6, 0.0, 
-                                0.6, -0.6, 0.0, 
-                                0.0, 0.6, 0.0];
+        let vertices: Vec<f32> = vec![0.6, -0.8, 0.0, 0.0, 0.4, 0.0, -0.8, -0.2, 0.0];
         let indices: Vec<u32> = vec![0, 1, 2];
-        let mut vao: u32 = 0;
+        let vao;
         unsafe {
             vao = create_vao(&vertices, &indices);
         };
@@ -168,7 +166,7 @@ fn main() {
         // This snippet is not enough to do the exercise, and will need to be modified (outside
         // of just using the correct path), but it only needs to be called once
 
-        let simple_shader = unsafe {
+        unsafe {
             shader::ShaderBuilder::new()
                 .attach_file("./shaders/simple.vert")
                 .attach_file("./shaders/simple.frag")

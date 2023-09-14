@@ -2,7 +2,7 @@
 if exist source.zip (
     del source.zip
 )
-"%~dp0"/vendor/7za.exe -tzip a source.zip ^
+C:/Users/marin/Documents/GitHub/gloom-rs/vendor/7za.exe -tzip a source.zip ^
     Cargo.lock ^
     Cargo.toml ^
     src ^
