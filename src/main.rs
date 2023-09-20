@@ -53,31 +53,44 @@ fn offset<T>(n: u32) -> *const c_void {
 
 
 // == // Generate your VAO here
-unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>) -> u32 {
+unsafe fn create_vao(vertices: &Vec<f32>, colors: &Vec<f32>, indices: &Vec<u32>) -> u32 {
     // Implement me!
 
     // This should:
     // * Generate a VAO and bind it
     let mut arrayID = 0;
     gl::GenVertexArrays(1, &mut arrayID);
+    assert!(arrayID != 0);
     gl::BindVertexArray(arrayID);
     
     // * Generate a VBO and bind it
-    let mut bufferID = 0;
-    gl::GenBuffers(1, &mut bufferID);
-    gl::BindBuffer(gl::ARRAY_BUFFER, bufferID);
-    
+    let mut v_bufferID = 0;
+    gl::GenBuffers(1, &mut v_bufferID);
+    assert!(v_bufferID != 0);
+    gl::BindBuffer(gl::ARRAY_BUFFER, v_bufferID);
     // * Fill it with data
     gl::BufferData(gl::ARRAY_BUFFER, byte_size_of_array(vertices), pointer_to_array(vertices), gl::STATIC_DRAW);
+    println!("Size of vertices array : {}", byte_size_of_array(vertices));
 
     // * Configure a VAP for the data and enable it
     // Careful about stride parameter for next assignment
     gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 0, 0 as *const _);
     gl::EnableVertexAttribArray(0);
 
+    // Same for the colors
+    let mut c_bufferID = 0;
+    gl::GenBuffers(1, &mut c_bufferID);
+    assert!(c_bufferID != 0);
+    gl::BindBuffer(gl::ARRAY_BUFFER, c_bufferID);
+    gl::BufferData(gl::ARRAY_BUFFER, byte_size_of_array(colors), pointer_to_array(colors), gl::STATIC_DRAW);
+    gl::VertexAttribPointer(1, 4, gl::FLOAT, gl::FALSE, 0, 0 as *const _);
+    gl::EnableVertexAttribArray(1);
+    println!("Size of colors array : {}", byte_size_of_array(colors));
+
     // * Generate a IBO and bind it
     let mut indexBufferID = 0;
     gl::GenBuffers(1, &mut indexBufferID);
+    assert!(indexBufferID != 0);
     gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, indexBufferID);
 
     // * Fill it with data
@@ -149,12 +162,32 @@ fn main() {
 
         // == // Set up your VAO around here
 
-        // let my_vao = unsafe { 1337 };
-        let vertices: Vec<f32> = vec![0.6, -0.8, 0.0, 0.0, 0.4, 0.0, -0.8, -0.2, 0.0];
-        let indices: Vec<u32> = vec![0, 1, 2];
+        let vertices: Vec<f32> = vec![
+            0.6, -0.6, 0.2,
+            0.0, 0.4, 0.2, 
+            -0.6, -0.6, 0.2,
+            0.7, 0.6, 0.1,
+            -0.7, 0.6, 0.1, 
+            0.0, 0.0, 0.1,
+            0.6, -0.7, 0.0,
+            0.0, 0.3, 0.0, 
+            -0.6, -0.7, 0.0,
+        ];
+        let colors: Vec<f32> = vec![
+            1.0, 0.0, 1.0, 0.5, 
+            1.0, 0.0, 1.0, 0.5, 
+            1.0, 0.0, 1.0, 0.5, 
+            0.0, 1.0, 1.0, 0.5, 
+            0.0, 1.0, 1.0, 0.5, 
+            0.0, 1.0, 1.0, 0.5,
+            1.0, 1.0, 0.0, 0.5,
+            1.0, 1.0, 0.0, 0.5,
+            1.0, 1.0, 0.0, 0.5,
+        ];
+        let indices: Vec<u32> = vec![0, 1, 2, 3, 4, 5, 6, 7, 8];
         let vao;
         unsafe {
-            vao = create_vao(&vertices, &indices);
+            vao = create_vao(&vertices, &colors, &indices);
         };
 
         // == // Set up your shaders here
@@ -175,8 +208,12 @@ fn main() {
         };
 
         // Used to demonstrate keyboard handling for exercise 2.
-        let mut _arbitrary_number = 0.0; // feel free to remove
-
+        // let mut _arbitrary_number = 0.0; // feel free to remove
+        let mut forward = 0.0;
+        let mut left = 0.0;
+        let mut up = 0.0;
+        let mut left_rotation = 0.0;
+        let mut up_rotation = 0.0;
 
         // The main rendering loop
         let first_frame_time = std::time::Instant::now();
@@ -206,13 +243,45 @@ fn main() {
                         // The `VirtualKeyCode` enum is defined here:
                         //    https://docs.rs/winit/0.25.0/winit/event/enum.VirtualKeyCode.html
 
-                        VirtualKeyCode::A => {
-                            _arbitrary_number += delta_time;
+                        // Forward
+                        VirtualKeyCode::W => {
+                            forward += delta_time;
                         }
-                        VirtualKeyCode::D => {
-                            _arbitrary_number -= delta_time;
+                        VirtualKeyCode::S => {
+                            forward -= delta_time;
                         }
 
+                        // Left
+                        VirtualKeyCode::A => {
+                            left += delta_time;
+                        }
+                        VirtualKeyCode::D => {
+                            left -= delta_time;
+                        }
+
+                        // Up
+                        VirtualKeyCode::Space => {
+                            up += delta_time;
+                        }
+                        VirtualKeyCode::LShift => {
+                            up -= delta_time;
+                        }
+
+                        // left_rotation
+                        VirtualKeyCode::Left => {
+                            left_rotation -= delta_time;
+                        }
+                        VirtualKeyCode::Right => {
+                            left_rotation += delta_time;
+                        }
+
+                        // up_rotation
+                        VirtualKeyCode::Up => {
+                            up_rotation -= delta_time;
+                        }
+                        VirtualKeyCode::Down => {
+                            up_rotation += delta_time;
+                        }
 
                         // default handler:
                         _ => { }
@@ -229,13 +298,49 @@ fn main() {
             }
 
             // == // Please compute camera transforms here (exercise 2 & 3)
+            let global_translate = glm::mat4(
+                    1.0, 0.0, 0.0, left,
+                    0.0, 1.0, 0.0, up,
+                    0.0, 0.0, 1.0, forward,
+                    0.0, 0.0, 0.0, 1.0,
+            );
+            let global_rotation = glm::mat4(
+                    left_rotation.cos(), 0.0, left_rotation.sin(), 0.0,
+                    0.0, 1.0, 0.0, 0.0,
+                    -left_rotation.sin(), 0.0, left_rotation.cos(), 0.0,
+                    0.0, 0.0, 0.0, 1.0,
+            ) * glm::mat4(
+                    1.0, 0.0, 0.0, 0.0,
+                    0.0, up_rotation.cos(), -up_rotation.sin(), 0.0,
+                    0.0, up_rotation.sin(), up_rotation.cos(), 0.0,
+                    0.0, 0.0, 0.0, 1.0,
+            );
 
+            // After UseProgram function :
+            // let a = elapsed.sin();
+            unsafe {
+                // let matrix: glm::Mat4 = glm::identity();
+                /*let matrix = glm::mat4(
+                    1.0, a, 0.0, a,
+                    a, 1.0, 0.0, a,
+                    0.0, 0.0, 1.0, 0.0,
+                    0.0, 0.0, 0.0, 1.0,
+                );*/
+                let translate = glm::mat4(
+                    1.0, 0.0, 0.0, 0.0,
+                    0.0, 1.0, 0.0, 0.0,
+                    0.0, 0.0, 1.0, -2.0,
+                    0.0, 0.0, 0.0, 1.0,
+                );
+                let perspective: glm::Mat4 = glm::perspective(window_aspect_ratio, 1.0, 1.0, 100.0);
+                let matrix = perspective * global_rotation * global_translate * translate;
+                gl::UniformMatrix4fv(2, 1, gl::FALSE, matrix.as_ptr());
+            }
 
             unsafe {
                 // Clear the color and depth buffers
                 gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-
 
                 // == // Issue the necessary gl:: commands to draw your scene here
                 gl::BindVertexArray(vao);
