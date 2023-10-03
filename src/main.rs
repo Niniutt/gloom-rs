@@ -209,9 +209,10 @@ fn main() {
 
         // Used to demonstrate keyboard handling for exercise 2.
         // let mut _arbitrary_number = 0.0; // feel free to remove
-        let mut forward = 0.0;
-        let mut left = 0.0;
-        let mut up = 0.0;
+        let mut position: glm::Vec3 = glm::vec3(0.0, 0.0, -2.0);
+        let x: glm::Vec3 = glm::vec3(1.0, 0.0, 0.0);
+        let y: glm::Vec3 = glm::vec3(0.0, 1.0, 0.0);
+        let z: glm::Vec3 = glm::vec3(0.0, 0.0, 1.0);
         let mut left_rotation = 0.0;
         let mut up_rotation = 0.0;
 
@@ -236,6 +237,14 @@ fn main() {
                 }
             }
 
+            // Works but shorter version :
+            let global_translate: glm::Mat4 = glm::translation(&position);
+            let global_rotation: glm::Mat4 = glm::rotation(up_rotation, &glm::vec3(1.0, 0.0, 0.0))
+             * glm::rotation(left_rotation, &glm::vec3(0.0, 1.0, 0.0));
+            let inverse_rotation: glm::Mat4 = glm::rotation(- up_rotation, &glm::vec3(1.0, 0.0, 0.0))
+             * glm::rotation(- left_rotation, &glm::vec3(0.0, 1.0, 0.0));
+            let view = global_rotation * global_translate;
+
             // Handle keyboard input
             if let Ok(keys) = pressed_keys.lock() {
                 for key in keys.iter() {
@@ -245,26 +254,26 @@ fn main() {
 
                         // Forward
                         VirtualKeyCode::W => {
-                            forward += delta_time;
+                            position += (inverse_rotation * (z.to_homogeneous() * delta_time)).xyz();
                         }
                         VirtualKeyCode::S => {
-                            forward -= delta_time;
+                            position -= (inverse_rotation * (z.to_homogeneous() * delta_time)).xyz();
                         }
 
                         // Left
                         VirtualKeyCode::A => {
-                            left += delta_time;
+                            position += (inverse_rotation * (x.to_homogeneous() * delta_time)).xyz();
                         }
                         VirtualKeyCode::D => {
-                            left -= delta_time;
+                            position -= (inverse_rotation * (x.to_homogeneous() * delta_time)).xyz();
                         }
 
                         // Up
                         VirtualKeyCode::Space => {
-                            up += delta_time;
+                            position -= y * delta_time;
                         }
                         VirtualKeyCode::LShift => {
-                            up -= delta_time;
+                            position += y * delta_time;
                         }
 
                         // left_rotation
@@ -277,10 +286,14 @@ fn main() {
 
                         // up_rotation
                         VirtualKeyCode::Up => {
-                            up_rotation -= delta_time;
+                            if (up_rotation > - 1.57) {
+                                up_rotation -= delta_time;
+                            }
                         }
                         VirtualKeyCode::Down => {
-                            up_rotation += delta_time;
+                            if (up_rotation < 1.57) {
+                                up_rotation += delta_time;
+                            }
                         }
 
                         // default handler:
@@ -298,42 +311,42 @@ fn main() {
             }
 
             // == // Please compute camera transforms here (exercise 2 & 3)
-            let global_translate = glm::mat4(
+            /*= glm::mat4(
                     1.0, 0.0, 0.0, left,
                     0.0, 1.0, 0.0, up,
                     0.0, 0.0, 1.0, forward,
                     0.0, 0.0, 0.0, 1.0,
             );
             let global_rotation = glm::mat4(
-                    left_rotation.cos(), 0.0, left_rotation.sin(), 0.0,
-                    0.0, 1.0, 0.0, 0.0,
-                    -left_rotation.sin(), 0.0, left_rotation.cos(), 0.0,
-                    0.0, 0.0, 0.0, 1.0,
-            ) * glm::mat4(
                     1.0, 0.0, 0.0, 0.0,
                     0.0, up_rotation.cos(), -up_rotation.sin(), 0.0,
                     0.0, up_rotation.sin(), up_rotation.cos(), 0.0,
                     0.0, 0.0, 0.0, 1.0,
-            );
+            ) * glm::mat4(
+                    left_rotation.cos(), 0.0, left_rotation.sin(), 0.0,
+                    0.0, 1.0, 0.0, 0.0,
+                    -left_rotation.sin(), 0.0, left_rotation.cos(), 0.0,
+                    0.0, 0.0, 0.0, 1.0,
+            );*/
 
             // After UseProgram function :
             // let a = elapsed.sin();
+            // let matrix: glm::Mat4 = glm::identity();
+            /* let matrix = glm::mat4(
+                1.0, a, 0.0, 0.0,
+                0.0, 1.0, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                0.0, 0.0, 0.0, 1.0,
+            );*/
+            /*let translate = glm::mat4(
+                1.0, 0.0, 0.0, 0.0,
+                0.0, 1.0, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                0.0, 0.0, 0.0, 1.0,
+            );*/
+            let perspective: glm::Mat4 = glm::perspective(window_aspect_ratio, 1.0, 1.0, 100.0);
+            let matrix = perspective * view; // model
             unsafe {
-                // let matrix: glm::Mat4 = glm::identity();
-                /*let matrix = glm::mat4(
-                    1.0, a, 0.0, a,
-                    a, 1.0, 0.0, a,
-                    0.0, 0.0, 1.0, 0.0,
-                    0.0, 0.0, 0.0, 1.0,
-                );*/
-                let translate = glm::mat4(
-                    1.0, 0.0, 0.0, 0.0,
-                    0.0, 1.0, 0.0, 0.0,
-                    0.0, 0.0, 1.0, -2.0,
-                    0.0, 0.0, 0.0, 1.0,
-                );
-                let perspective: glm::Mat4 = glm::perspective(window_aspect_ratio, 1.0, 1.0, 100.0);
-                let matrix = perspective * global_rotation * global_translate * translate;
                 gl::UniformMatrix4fv(2, 1, gl::FALSE, matrix.as_ptr());
             }
 
