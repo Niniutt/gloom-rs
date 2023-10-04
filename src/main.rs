@@ -16,6 +16,7 @@ mod shader;
 mod util;
 mod mesh;
 mod scene_graph;
+mod toolbox;
 
 use scene_graph::SceneNode;
 
@@ -129,6 +130,7 @@ unsafe fn draw_scene(node: &scene_graph::SceneNode, view_projection_matrix: &glm
     if node.index_count != -1 {
         // Set uniforms
         gl::UniformMatrix4fv(3, 1, gl::FALSE, MVP_matrix.as_ptr());
+        gl::UniformMatrix4fv(4, 1, gl::FALSE, model.as_ptr());
         // Bind VAO and draw VAO
         gl::BindVertexArray(node.vao_id);
         gl::DrawElements(gl::TRIANGLES, node.index_count, gl::UNSIGNED_INT, 0 as *const c_void);
@@ -258,9 +260,9 @@ fn main() {
         // Used to demonstrate keyboard handling for exercise 2.
         // let mut _arbitrary_number = 0.0; // feel free to remove
         let mut position: glm::Vec3 = glm::vec3(0.0, 0.0, -20.0);
-        let x: glm::Vec3 = glm::vec3(1.0, 0.0, 0.0);
-        let y: glm::Vec3 = glm::vec3(0.0, 1.0, 0.0);
         let z: glm::Vec3 = glm::vec3(0.0, 0.0, 1.0);
+        let y: glm::Vec3 = glm::vec3(0.0, 1.0, 0.0);
+        let x: glm::Vec3 = glm::vec3(1.0, 0.0, 0.0);
         let mut left_rotation = 0.0;
         let mut up_rotation = 0.0;
 
@@ -289,10 +291,10 @@ fn main() {
             let global_translate: glm::Mat4 = glm::translation(&position);
             let global_rotation: glm::Mat4 = glm::rotation(up_rotation, &x)
              * glm::rotation(left_rotation, &y);
-            let inverse_rotation: glm::Mat4 = glm::rotation(-up_rotation, &x)
-             * glm::rotation(-left_rotation, &y);
+            let inverse_rotation: glm::Mat4 = //glm::rotation(-up_rotation, &x)
+              glm::rotation(-left_rotation, &y);
             let view = global_rotation * global_translate;
-            let speed = 10.0;
+            let speed = 30.0;
 
             // Handle keyboard input
             if let Ok(keys) = pressed_keys.lock() {
@@ -359,10 +361,17 @@ fn main() {
                 *delta = (0.0, 0.0); // reset when done
             }
 
-            body_node.position.y = (speed * elapsed).sin();
-            tail_rotor_node.rotation.x = speed * elapsed;
-            main_rotor_node.rotation.y = speed * elapsed;
-            // println!("{}", body_node.position.y);
+            // Test animation for ex 3 task 3
+            // body_node.position.y = (5.0 * elapsed).sin();
+            tail_rotor_node.rotation.x = 200.0 * elapsed;
+            main_rotor_node.rotation.y = 200.0 * elapsed;
+            // Heading :
+            let heading = toolbox::simple_heading_animation(elapsed);
+            body_node.position.x = heading.x;
+            body_node.position.z = heading.z;
+            body_node.rotation.z = heading.roll;
+            body_node.rotation.y = heading.yaw;
+            body_node.rotation.x = heading.pitch;
             let perspective: glm::Mat4 = glm::perspective(window_aspect_ratio, 1.0, 1.0, 1000.0);
             let matrix = perspective * view; // model to be added in draw_scene
             let model = glm::Mat4::identity();
