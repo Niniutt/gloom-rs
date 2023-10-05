@@ -118,9 +118,9 @@ unsafe fn create_vao(vertices: &Vec<f32>, normals: &Vec<f32>, colors: &Vec<f32>,
 unsafe fn draw_scene(node: &scene_graph::SceneNode, view_projection_matrix: &glm::Mat4, transformation_so_far: &glm::Mat4) {
     // Perform any logic needed before drawing the node
     let mut model = glm::translation(&glm::vec3(-node.reference_point.x, -node.reference_point.y, -node.reference_point.z));
-    model = glm::rotation(node.rotation.x, &glm::vec3(1.0, 0.0, 0.0)) * model;
-    model = glm::rotation(node.rotation.y, &glm::vec3(0.0, 1.0, 0.0)) * model;
     model = glm::rotation(node.rotation.z, &glm::vec3(0.0, 0.0, 1.0)) * model;
+    model = glm::rotation(node.rotation.y, &glm::vec3(0.0, 1.0, 0.0)) * model;
+    model = glm::rotation(node.rotation.x, &glm::vec3(1.0, 0.0, 0.0)) * model;
     model = glm::translation(&glm::vec3(node.reference_point.x, node.reference_point.y, node.reference_point.z)) * model;
     model = glm::translation(&glm::vec3(node.position.x, node.position.y, node.position.z)) * model;
     model = transformation_so_far * model;
