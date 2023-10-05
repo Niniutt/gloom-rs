@@ -1,8 +1,10 @@
 {
   "ExpandedNodes": [
     "",
-    "\\report\\images"
+    "\\report\\images",
+    "\\resources",
+    "\\src"
   ],
-  "SelectedNode": "\\create_code_archive_for_blackboard_WINDOWS.bat",
+  "SelectedNode": "\\src\\mesh.rs",
   "PreviewInSolutionExplorer": false
 }

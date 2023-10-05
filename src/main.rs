@@ -205,9 +205,9 @@ fn main() {
         let terrain = mesh::Terrain::load("./resources/lunarsurface.obj");
         let helicopter = mesh::Helicopter::load("./resources/helicopter.obj");
         let body = helicopter.body; let door = helicopter.door; let main_rotor = helicopter.main_rotor; let tail_rotor = helicopter.tail_rotor;
-
+        
         // Create VAOs
-        let terrain_vao; let body_vao; let door_vao; let main_rotor_vao; let tail_rotor_vao;
+        let (mut terrain_vao, mut body_vao, mut door_vao, mut main_rotor_vao, mut tail_rotor_vao);
         unsafe {
             terrain_vao = create_vao(&terrain.vertices, &terrain.normals, &terrain.colors, &terrain.indices);
             body_vao = create_vao(&body.vertices, &body.normals, &body.colors, &body.indices);
@@ -216,27 +216,32 @@ fn main() {
             tail_rotor_vao = create_vao(&tail_rotor.vertices, &tail_rotor.normals, &tail_rotor.colors, &tail_rotor.indices);
         };
 
-        // Create nodes
+        // Initialize nodes
         let mut scene_node = SceneNode::new();
         let terrain_node = SceneNode::from_vao(terrain_vao, terrain.indices.len() as i32);
-        let mut helicopter_node = SceneNode::new();
-        let mut body_node = SceneNode::from_vao(body_vao, body.indices.len() as i32);
-        let mut door_node = SceneNode::from_vao(door_vao, door.indices.len() as i32);
-        let mut main_rotor_node = SceneNode::from_vao(main_rotor_vao, main_rotor.indices.len() as i32);
-        let mut tail_rotor_node = SceneNode::from_vao(tail_rotor_vao, tail_rotor.indices.len() as i32);
-        tail_rotor_node.reference_point = glm::vec3(0.35, 2.3, 10.4);
-        tail_rotor_node.print();
+        let mut helicopters_node = SceneNode::new();
 
-        // Add helicopter nodes to helicopter parent
-        helicopter_node.add_child(&body_node);
-        body_node.add_child(&door_node);
-        body_node.add_child(&main_rotor_node);
-        body_node.add_child(&tail_rotor_node);
+        for i in 0..=4 {
+            // New nodes
+            let mut body_node = SceneNode::from_vao(body_vao, body.indices.len() as i32);
+            let door_node = SceneNode::from_vao(door_vao, door.indices.len() as i32);
+            let main_rotor_node = SceneNode::from_vao(main_rotor_vao, main_rotor.indices.len() as i32);
+            let mut tail_rotor_node = SceneNode::from_vao(tail_rotor_vao, tail_rotor.indices.len() as i32);
+            tail_rotor_node.reference_point = glm::vec3(0.35, 2.3, 10.4);
 
-        // helicopter_node.print();
+            // Add children
+            body_node.add_child(&door_node);
+            body_node.add_child(&main_rotor_node);
+            body_node.add_child(&tail_rotor_node);
+
+            // Add body node to helicopter parent
+            helicopters_node.add_child(&body_node);
+        }
+
+        helicopters_node.print();
         
         scene_node.add_child(&terrain_node);
-        scene_node.add_child(&helicopter_node);
+        scene_node.add_child(&helicopters_node);
 
         // scene_node.print();
 
@@ -363,17 +368,25 @@ fn main() {
 
             // Test animation for ex 3 task 3
             // body_node.position.y = (5.0 * elapsed).sin();
-            tail_rotor_node.rotation.x = 200.0 * elapsed;
-            main_rotor_node.rotation.y = 200.0 * elapsed;
-            // Heading :
-            let heading = toolbox::simple_heading_animation(elapsed);
-            body_node.position.x = heading.x;
-            body_node.position.z = heading.z;
-            body_node.rotation.z = heading.roll;
-            body_node.rotation.y = heading.yaw;
-            body_node.rotation.x = heading.pitch;
+            // tail_rotor_node.rotation.x = 200.0 * elapsed;
+            // main_rotor_node.rotation.y = 200.0 * elapsed;
+            for i in 0..=4 {
+                unsafe {
+                    // Heading
+                    let heading: toolbox::Heading = toolbox::simple_heading_animation(elapsed + (i as f32) * 1.1);
+                    (*helicopters_node.children[i]).position.x = heading.x;
+                    (*helicopters_node.children[i]).position.z = heading.z;
+                    (*helicopters_node.children[i]).rotation.z = heading.roll;
+                    (*helicopters_node.children[i]).rotation.y = heading.yaw;
+                    (*helicopters_node.children[i]).rotation.x = heading.pitch;
+
+                    // Rotors' rotation
+                    (*(*helicopters_node.children[i]).children[2]).rotation.x = 200.0 * elapsed;
+                    (*(*helicopters_node.children[i]).children[1]).rotation.y = 200.0 * elapsed;
+                }
+            }
             let perspective: glm::Mat4 = glm::perspective(window_aspect_ratio, 1.0, 1.0, 1000.0);
-            let matrix = perspective * view; // model to be added in draw_scene
+            let view_perspective = perspective * view;
             let model = glm::Mat4::identity();
 
             unsafe {
@@ -382,7 +395,7 @@ fn main() {
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
                 // == // Issue the necessary gl:: commands to draw your scene here
-                draw_scene(&scene_node, &matrix, &model);
+                draw_scene(&scene_node, &view_perspective, &model);
             }
 
             // Display the new color buffer on the display
